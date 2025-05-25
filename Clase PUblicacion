@@ -1,0 +1,19 @@
+public abstract class Publicacion {
+    protected String titulo;
+    protected String autor;
+    protected int año;
+
+    public Publicacion(String titulo, String autor, int año) {
+        this.titulo = titulo;
+        this.autor = autor;
+        this.año = año;
+    }
+
+    // Método abstracto que deben implementar las subclases
+    public abstract void mostrarDetalles();
+
+    // Método final que no puede ser sobrescrito
+    public final String getInformacionBasica() {
+        return "Título: " + titulo + ", Autor: " + autor + ", Año: " + año;
+    }
+}
