@@ -17,3 +17,247 @@ public abstract class Publicacion {
         return "Título: " + titulo + ", Autor: " + autor + ", Año: " + año;
     }
 }
+
+
+public final class Libro extends Publicacion {
+    private final String isbn;
+    private final int numPaginas;
+
+    public Libro(String titulo, String autor, int año, String isbn, int numPaginas) {
+        super(titulo, autor, año);
+        this.isbn = isbn;
+        this.numPaginas = numPaginas;
+    }
+
+    @Override
+    public void mostrarDetalles() {
+        System.out.println(getInformacionBasica() + 
+                         ", Tipo: Libro, ISBN: " + isbn + 
+                         ", Páginas: " + numPaginas);
+    }
+
+    public String getIsbn() {
+        return isbn;
+    }
+}
+
+public final class Revista extends Publicacion {
+    private final int volumen;
+    private final int numero;
+
+    public Revista(String titulo, String autor, int año, int volumen, int numero) {
+        super(titulo, autor, año);
+        this.volumen = volumen;
+        this.numero = numero;
+    }
+
+    @Override
+    public void mostrarDetalles() {
+        System.out.println(getInformacionBasica() + 
+                         ", Tipo: Revista, Volumen: " + volumen + 
+                         ", Número: " + numero);
+    }
+}
+
+public final class Tesis extends Publicacion {
+    private final String universidad;
+    private final String gradoAcademico;
+
+    public Tesis(String titulo, String autor, int año, String universidad, String gradoAcademico) {
+        super(titulo, autor, año);
+        this.universidad = universidad;
+        this.gradoAcademico = gradoAcademico;
+    }
+
+    @Override
+    public void mostrarDetalles() {
+        System.out.println(getInformacionBasica() + 
+                         ", Tipo: Tesis, Universidad: " + universidad + 
+                         ", Grado: " + gradoAcademico);
+    }
+}
+
+
+
+public class Usuario {
+    private String id;
+    private String nombre;
+
+    public Usuario(String id, String nombre) {
+        this.id = id;
+        this.nombre = nombre;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void solicitarPrestamo(Publicacion publicacion, Biblioteca biblioteca) {
+        biblioteca.registrarPrestamo(this, publicacion);
+    }
+}
+
+public interface Autor {
+    void agregarPublicacion(Publicacion publicacion);
+    List<Publicacion> getPublicaciones();
+}
+
+// Clase para usuarios que también son autores
+public class UsuarioAutor extends Usuario implements Autor {
+    private List<Publicacion> publicaciones;
+
+    public UsuarioAutor(String id, String nombre) {
+        super(id, nombre);
+        this.publicaciones = new ArrayList<>();
+    }
+
+    @Override
+    public void agregarPublicacion(Publicacion publicacion) {
+        publicaciones.add(publicacion);
+    }
+
+    @Override
+    public List<Publicacion> getPublicaciones() {
+        return new ArrayList<>(publicaciones);
+    }
+}
+
+
+
+import java.time.LocalDate;
+
+public class Prestamo {
+    private final Publicacion publicacion;
+    private final Usuario usuario;
+    private final LocalDate fechaInicio;
+    private LocalDate fechaDevolucion;
+    private boolean devuelto;
+
+    public Prestamo(Publicacion publicacion, Usuario usuario) {
+        this.publicacion = publicacion;
+        this.usuario = usuario;
+        this.fechaInicio = LocalDate.now();
+        this.devuelto = false;
+    }
+
+    public void registrarDevolucion() {
+        this.fechaDevolucion = LocalDate.now();
+        this.devuelto = true;
+    }
+
+    public int calcularDiasPrestamo() {
+        LocalDate fechaFinal = devuelto ? fechaDevolucion : LocalDate.now();
+        return (int) fechaInicio.until(fechaFinal).getDays();
+    }
+
+    public Publicacion getPublicacion() {
+        return publicacion;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+}
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Biblioteca {
+    private List<Publicacion> publicaciones;
+    private List<Usuario> usuarios;
+    private List<Prestamo> prestamos;
+
+    public Biblioteca() {
+        this.publicaciones = new ArrayList<>();
+        this.usuarios = new ArrayList<>();
+        this.prestamos = new ArrayList<>();
+    }
+
+    public void agregarPublicacion(Publicacion publicacion) {
+        publicaciones.add(publicacion);
+    }
+
+    public void registrarUsuario(Usuario usuario) {
+        usuarios.add(usuario);
+    }
+
+    public void registrarPrestamo(Usuario usuario, Publicacion publicacion) {
+        if (!publicaciones.contains(publicacion)) {
+            throw new IllegalArgumentException("La publicación no pertenece a esta biblioteca");
+        }
+        if (!usuarios.contains(usuario)) {
+            throw new IllegalArgumentException("El usuario no está registrado");
+        }
+
+        Prestamo prestamo = new Prestamo(publicacion, usuario);
+        prestamos.add(prestamo);
+    }
+
+    public void registrarDevolucion(Prestamo prestamo) {
+        prestamo.registrarDevolucion();
+    }
+
+    public List<Prestamo> getPrestamosActivos() {
+        List<Prestamo> activos = new ArrayList<>();
+        for (Prestamo p : prestamos) {
+            if (!p.isDevuelto()) {
+                activos.add(p);
+            }
+        }
+        return activos;
+    }
+
+    public List<Publicacion> buscarPorTitulo(String titulo) {
+        List<Publicacion> resultados = new ArrayList<>();
+        for (Publicacion p : publicaciones) {
+            if (p.getTitulo().toLowerCase().contains(titulo.toLowerCase())) {
+                resultados.add(p);
+            }
+        }
+        return resultados;
+    }
+}
+
+
+
+public class Main {
+    public static void main(String[] args) {
+        // Crear biblioteca
+        Biblioteca biblioteca = new Biblioteca();
+
+        // Crear publicaciones
+        Libro libro = new Libro("Clean Code", "Robert Martin", 2008, "978-0132350884", 464);
+        Revista revista = new Revista("National Geographic", "Varios", 2023, 243, 5);
+        Tesis tesis = new Tesis("Machine Learning Applications", "Ana Pérez", 2022, "Universidad Nacional", "Doctorado");
+
+        // Agregar publicaciones a la biblioteca
+        biblioteca.agregarPublicacion(libro);
+        biblioteca.agregarPublicacion(revista);
+        biblioteca.agregarPublicacion(tesis);
+
+        // Crear usuarios
+        Usuario usuario1 = new Usuario("U001", "Juan González");
+        UsuarioAutor usuario2 = new UsuarioAutor("U002", "María López");
+
+        // Registrar usuarios
+        biblioteca.registrarUsuario(usuario1);
+        biblioteca.registrarUsuario(usuario2);
+
+        // Usuario que es también autor
+        usuario2.agregarPublicacion(tesis); // María es autora de la tesis
+
+        // Realizar préstamos
+        usuario1.solicitarPrestamo(libro, biblioteca);
+        usuario2.solicitarPrestamo(revista, biblioteca);
+
+        // Mostrar detalles de publicaciones (polimorfismo)
+        libro.mostrarDetalles();
+        revista.mostrarDetalles();
+        tesis.mostrarDetalles();
+    }
+}
