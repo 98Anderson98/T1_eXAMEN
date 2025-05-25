@@ -9,15 +9,16 @@ public abstract class Publicacion {
         this.año = año;
     }
 
-    // Método abstracto que deben implementar las subclases
     public abstract void mostrarDetalles();
 
-    // Método final que no puede ser sobrescrito
     public final String getInformacionBasica() {
         return "Título: " + titulo + ", Autor: " + autor + ", Año: " + año;
     }
-}
 
+    public String getTitulo() {
+        return titulo;
+    }
+}
 
 public final class Libro extends Publicacion {
     private final String isbn;
@@ -78,6 +79,8 @@ public final class Tesis extends Publicacion {
 }
 
 
+import java.util.ArrayList;
+import java.util.List;
 
 public class Usuario {
     private String id;
@@ -106,7 +109,6 @@ public interface Autor {
     List<Publicacion> getPublicaciones();
 }
 
-// Clase para usuarios que también son autores
 public class UsuarioAutor extends Usuario implements Autor {
     private List<Publicacion> publicaciones;
 
@@ -126,32 +128,23 @@ public class UsuarioAutor extends Usuario implements Autor {
     }
 }
 
-
-
-import java.time.LocalDate;
-
 public class Prestamo {
     private final Publicacion publicacion;
     private final Usuario usuario;
-    private final LocalDate fechaInicio;
-    private LocalDate fechaDevolucion;
+    private String fechaInicio;
+    private String fechaDevolucion;
     private boolean devuelto;
 
-    public Prestamo(Publicacion publicacion, Usuario usuario) {
+    public Prestamo(Publicacion publicacion, Usuario usuario, String fechaInicio) {
         this.publicacion = publicacion;
         this.usuario = usuario;
-        this.fechaInicio = LocalDate.now();
+        this.fechaInicio = fechaInicio;
         this.devuelto = false;
     }
 
-    public void registrarDevolucion() {
-        this.fechaDevolucion = LocalDate.now();
+    public void registrarDevolucion(String fechaDevolucion) {
+        this.fechaDevolucion = fechaDevolucion;
         this.devuelto = true;
-    }
-
-    public int calcularDiasPrestamo() {
-        LocalDate fechaFinal = devuelto ? fechaDevolucion : LocalDate.now();
-        return (int) fechaInicio.until(fechaFinal).getDays();
     }
 
     public Publicacion getPublicacion() {
@@ -161,7 +154,20 @@ public class Prestamo {
     public Usuario getUsuario() {
         return usuario;
     }
+
+    public boolean isDevuelto() {
+        return devuelto;
+    }
+
+    public String getFechaInicio() {
+        return fechaInicio;
+    }
+
+    public String getFechaDevolucion() {
+        return fechaDevolucion;
+    }
 }
+
 
 
 import java.util.ArrayList;
@@ -186,20 +192,17 @@ public class Biblioteca {
         usuarios.add(usuario);
     }
 
-    public void registrarPrestamo(Usuario usuario, Publicacion publicacion) {
-        if (!publicaciones.contains(publicacion)) {
-            throw new IllegalArgumentException("La publicación no pertenece a esta biblioteca");
+    public void registrarPrestamo(Usuario usuario, Publicacion publicacion, String fechaInicio) {
+        if (publicaciones.contains(publicacion) && usuarios.contains(usuario)) {
+            Prestamo prestamo = new Prestamo(publicacion, usuario, fechaInicio);
+            prestamos.add(prestamo);
         }
-        if (!usuarios.contains(usuario)) {
-            throw new IllegalArgumentException("El usuario no está registrado");
-        }
-
-        Prestamo prestamo = new Prestamo(publicacion, usuario);
-        prestamos.add(prestamo);
     }
 
-    public void registrarDevolucion(Prestamo prestamo) {
-        prestamo.registrarDevolucion();
+    public void registrarDevolucion(Prestamo prestamo, String fechaDevolucion) {
+        if (prestamos.contains(prestamo)) {
+            prestamo.registrarDevolucion(fechaDevolucion);
+        }
     }
 
     public List<Prestamo> getPrestamosActivos() {
@@ -222,6 +225,8 @@ public class Biblioteca {
         return resultados;
     }
 }
+
+
 
 
 
@@ -251,11 +256,11 @@ public class Main {
         // Usuario que es también autor
         usuario2.agregarPublicacion(tesis); // María es autora de la tesis
 
-        // Realizar préstamos
-        usuario1.solicitarPrestamo(libro, biblioteca);
-        usuario2.solicitarPrestamo(revista, biblioteca);
+        // Realizar préstamos con fechas manuales
+        biblioteca.registrarPrestamo(usuario1, libro, "2023-10-01");
+        biblioteca.registrarPrestamo(usuario2, revista, "2023-10-02");
 
-        // Mostrar detalles de publicaciones (polimorfismo)
+        // Mostrar detalles de publicaciones
         libro.mostrarDetalles();
         revista.mostrarDetalles();
         tesis.mostrarDetalles();
